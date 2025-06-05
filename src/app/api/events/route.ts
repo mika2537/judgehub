@@ -1,11 +1,10 @@
-import connectToDb from "@/lib/mongodb";
+import {connectToDb } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const client = await connectToDb;
-    const db = client.db();
-    const matches: { _id: any; [key: string]: any }[] = await db.collection("events").find().toArray();
+    const { db } = await connectToDb();
+    const matches: { _id: any; [key: string]: any }[] = await db.collection("competitions").find().toArray();
 
     // Convert MongoDB _id to string for serialization
     const serializedMatches = matches.map((match) => ({

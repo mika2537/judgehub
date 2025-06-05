@@ -18,6 +18,7 @@ export async function POST(request) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("Hashed password:", hashedPassword);
 
     // Insert new user
     await db.collection("users").insertOne({

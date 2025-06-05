@@ -1,31 +1,23 @@
-import clientPromise from '../../../../lib/mongodb';
+import { NextApiRequest, NextApiResponse } from "next";
+import { MongoClient } from "mongodb";
+
+const uri = process.env.MONGODB_URI || "";
+const client = new MongoClient(uri);
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const client = await clientPromise;
-    const db = client.db();
-    
-    const { name, description, criteria } = req.body;
-    
-    const competition = {
-      name,
-      description,
-      criteria,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    const result = await db.collection('competitions').insertOne(competition);
-    
-    res.status(201).json({ 
-      success: true, 
-      competitionId: result.insertedId 
-    });
+    await client.connect();
+    const db = client.db("judgehub");
+    const competitions = await db.collection("competitions").find({}).toArray();
+    res.status(200).json(competitions);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating competition', error });
+    console.error("MongoDB error:", error);
+    res.status(500).json({ error: "Failed to fetch competitions" });
+  } finally {
+    await client.close();
   }
 }

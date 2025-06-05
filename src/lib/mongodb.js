@@ -1,39 +1,37 @@
-import { MongoClient } from "mongodb";
+// /app/api/judge/route.ts
+
+import { MongoClient } from "mongodb"; // FIXED: from 'mongodb', NOT 'mongoose'
 
 const uri = process.env.MONGODB_URI;
 const options = {};
 
-let client;
-let clientPromise;
-
-export async function connectToDb() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MongoDB URI is not defined in the environment variables.");
-  }
-
-  const client = await MongoClient.connect(process.env.MONGODB_URI);
-
-  const db = client.db(process.env.MONGODB_DB);
-
-  return { client, db };
-}
-
-if (!process.env.MONGODB_URI) {
+if (!uri) {
   throw new Error("Please add your Mongo URI to .env.local");
 }
 
+let client;
+let clientPromise;
+
+// eslint-disable-next-line no-var
+global._mongoClientPromise = global._mongoClientPromise || null;
+
 if (process.env.NODE_ENV === "development") {
-  // In development mode, use a global variable so the connection
-  // is preserved across module reloads caused by HMR (Hot Module Replacement)
+  // In dev, use global var to preserve connection across reloads
   if (!global._mongoClientPromise) {
     client = new MongoClient(uri, options);
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // In production mode, it's best to not use a global variable
+  // In production, create a new client
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
+}
+
+export async function connectToDb() {
+  const client = await clientPromise;
+  const db = client.db("judgehub");
+  return { client, db };
 }
 
 export default clientPromise;
